@@ -30,6 +30,7 @@ from utils.general import xywh2xyxy,clip_coords
 from textSpotting import textSpottingInfer
 from classifyText import textClassifyInfer
 from classifyImage import objectClasssifyInfer
+import hashlib
 
 device = select_device(0)
 
@@ -45,12 +46,13 @@ def load_model_yolo(weights=['models/weights/binh_new_best.pt', 'models/weights/
         weights[0], map_location=device)  # load FP32 model
     model_sua = attempt_load(
         weights[1], map_location=device)  # load FP32 model
-    return model_binh_sua,model_sua
+    return model_binh_sua.eval(),model_sua.eval()
 
 craft_detect, model_recognition = textSpottingInfer.load_model_1()
 mmocr_recog,pan_detect,classifyModel_level1,dict_model = textClassifyInfer.load_model()
 chinh_model,model_step,labels_end,labels_branch,dict_middle,dict_step= objectClasssifyInfer.load_model()
 model_binh_sua,model_sua = load_model_yolo()
+print(list(model_binh_sua.parameters())[-1])
 
 spell = SpellChecker(language=None,)  # loads default word frequency list
 spell.word_frequency.load_text_file('corpus.txt')
@@ -64,6 +66,8 @@ for line in lines:
 
 
 def run(images):
+    import numpy as np
+    for image in images: print(image); print(image.shape); np.save('image1.npy', image)
     results_end = []
     stride_binh = int(model_binh_sua.stride.max())  # model stride
     names_binh = model_binh_sua.module.names if hasattr(model_binh_sua, 'module') else model_binh_sua.names  # get class names
@@ -102,6 +106,11 @@ def run(images):
 
         # Process predictions binh sua
         for i, (det_binh, det_sua) in enumerate(zip(pred_binh, pred_sua)):  # detections per image
+            print('#' * 5 + 'process predicts binh sua' + '#' * 5)
+            print(i)
+            print(det_binh)
+            print(det_sua)
+            print('#' * 10)
             s, im0 = '', im0s.copy()
             gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]
             imc = im0.copy()
@@ -201,7 +210,7 @@ def run(images):
                                 output_final_branch = 'Unknow'
                         output_final_branch = output_final_branch.replace(" ", "_")
                         label = output_final_branch
-
+                        f_txt_i.writelines("output_final_branch: "+output_final_branch+"\n")
                         check_list = False
                         output_merge, _ = objectClasssifyInfer.predict_merge_model(
                             model_step, crop)
@@ -225,7 +234,8 @@ def run(images):
                                     labels_end, 2, temp_step)
                         esem = Ensemble(
                             output_final_branch, output_merge, temp_step, dict_middle, dict_step, text_list)
-                        label = esem.run() 
+                        label = esem.run()
+                        f_txt_i.writelines("esem: "+label+"\n")
                         if width_crop / height_crop < 0.495: #(4/7):
                             if "yoko" in label.split("/"):
                                 pass
@@ -260,11 +270,7 @@ def run(images):
                     x2 = x1+w
                     y2 = y1+h
                     text = res['text']
-                    tokens = text.split()
-                    text_end = ''
-                    for token in tokens:
-                        text_end=text_end+spell.correction(token)+" "
-                    list_text.append((text_end))
+                    list_text.append((text))
 
                 item['text_banner']= list_text
                 # f_txt.writelines("====TEXT BANNER===\n")

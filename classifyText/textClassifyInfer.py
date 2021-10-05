@@ -127,36 +127,51 @@ def bb_intersection_over_union(boxA, boxB):
     return iou
 
 
+# get 4 points of rectangle from poly
 def get_box_from_poly(pts):
-    pts = pts.reshape((-1, 2)).astype(int)
-    x, y, w, h = cv2.boundingRect(pts)
-    return np.array([x, y, x + w, y + h])
+    pts = pts.reshape((-1,2)).astype(int)
+    x,y,w,h = cv2.boundingRect(pts)
+    area = w*h
+    return np.array([x,y,x+w,y+h]), area
 
 
 def ensemble(pts1, pts2):
     # take pts2 first then pts1
     iou_thres = 0.5
     pts = []
-    box2 = []
-    for poly in pts2:
-        box2.append(get_box_from_poly(poly))
-
-    rm = []
-    for count, poly in enumerate(pts1):
-        box = get_box_from_poly(poly)
-        iou_score = np.array([bb_intersection_over_union(box, box2i) for box2i in box2])
-        if np.any(iou_score) > iou_thres:
-            rm.append(count)
-    pts1 = np.delete(pts1, rm, axis=0)
-
-    if pts1.size == 0:
+    
+    # box2 = []
+    # for poly in pts2:
+    #     box2.append(get_box_from_poly(poly))
+    
+    # rm = []
+    # for count, poly in enumerate(pts1):
+    #     box = get_box_from_poly(poly)
+    #     iou_score = np.array([bb_intersection_over_union(box, box2i) for box2i in box2])
+    #     if np.any(iou_score) > iou_thres:
+    #         rm.append(count)
+    # pts1 = np.delete(pts1, rm, axis=0)
+    
+    if len(pts1) == 0:
         pts = pts2
-    elif pts2.size == 0:
+    elif len(pts2) == 0:
         pts = pts1
-    elif pts1.size == 0 and pts2.size == 0:
-        pts = []
+    elif len(pts1)==0 and len(pts2)==0: pts = []
     else:
-        pts = np.vstack((pts1, pts2))
+        pts = np.vstack((pts1, pts2))   
+    
+    rm = []
+    for i in range(len(pts)):
+        for count, poly in enumerate(pts[i+1:]):
+            j = count +i+1
+            boxi, areai = get_box_from_poly(pts[i])
+            boxj, areaj = get_box_from_poly(poly)
+            iou_score = bb_intersection_over_union(boxi, boxj)
+            if iou_score > iou_thres:
+                if areai > areaj: rm.append(j)
+                else: rm.append(i)
+                
+    pts = np.delete(pts, rm, axis=0)
     return pts
 
 
@@ -170,15 +185,6 @@ def convert_boxPoint2Yolo(pts, imgShape):
         y = (y + h / 2) / height
         yolo.append(np.array([x, y, w / width, h / height]))
     return yolo
-
-
-def remove_small_text(pts):
-    new_pts = []
-    for poly in pts:
-        x, y, w, h = cv2.boundingRect(poly.astype(int))
-        if h > 10 and w > 10:
-            new_pts.append(poly)
-    return np.array(new_pts)
 
 
 def sort_pts(pts, max_pts):
