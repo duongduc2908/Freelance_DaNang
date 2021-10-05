@@ -11,13 +11,13 @@ sudo apt-get install g++
 sudo apt-get install cmake
 
 
+### setup:
+
+
 conda create -n name_envs python==3.7
 
 
 conda activate name_envs
-
-
-### setup:
 
 
 bash ./connfig.sh
