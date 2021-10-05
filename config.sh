@@ -16,7 +16,7 @@ pip install polygon3
 pip install pyclipper
 pip install colorlog
 python -m pip install Pillow==6.2
-cd ../../../
+cd ../../
 # rm -rf base config data_loader imgs result test_img trainer utils
 # rm PAN.ipynb README.MD train.py eval.py config.json
 
@@ -29,7 +29,7 @@ fi
 pip install pyspellchecker==0.6.2
 pip install ngram==3.3.2
 pip install -U scikit-learn
-conda install -c anaconda tensorflow-gpu==2.4.1
+pip install tensorflow-gpu==2.4.1
 pip install pandas
 pip install tqdm
 pip install seaborn
