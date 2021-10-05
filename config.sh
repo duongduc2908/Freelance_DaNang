@@ -35,4 +35,6 @@ pip install tqdm
 pip install seaborn
 pip install natsort
 pip install opencv-python==4.1.2.30
+pip install flask_cors
+pip install flask
 
