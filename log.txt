@@ -1,0 +1,67 @@
+Looking in links: https://download.pytorch.org/whl/torch_stable.html
+Collecting torch==1.7.1+cu101
+  Using cached https://download.pytorch.org/whl/cu101/torch-1.7.1%2Bcu101-cp37-cp37m-linux_x86_64.whl (735.4 MB)
+Collecting torchvision==0.8.2+cu101
+  Using cached https://download.pytorch.org/whl/cu101/torchvision-0.8.2%2Bcu101-cp37-cp37m-linux_x86_64.whl (12.8 MB)
+Collecting torchaudio==0.7.2
+  Using cached torchaudio-0.7.2-cp37-cp37m-manylinux1_x86_64.whl (7.6 MB)
+Collecting typing-extensions
+  Using cached typing_extensions-3.10.0.2-py3-none-any.whl (26 kB)
+Requirement already satisfied: numpy in /u01/Intern/env/duc_test_env/lib/python3.7/site-packages (from torch==1.7.1+cu101) (1.21.2)
+Requirement already satisfied: pillow>=4.1.1 in /u01/Intern/env/duc_test_env/lib/python3.7/site-packages (from torchvision==0.8.2+cu101) (8.3.2)
+Installing collected packages: typing-extensions, torch, torchvision, torchaudio
+Successfully installed torch-1.7.1+cu101 torchaudio-0.7.2 torchvision-0.8.2+cu101 typing-extensions-3.10.0.2
+Looking in links: https://download.openmmlab.com/mmcv/dist/cu101/torch1.7.0/index.html
+Collecting mmcv-full
+  Using cached https://download.openmmlab.com/mmcv/dist/cu101/torch1.7.0/mmcv_full-1.3.14-cp37-cp37m-manylinux1_x86_64.whl (32.6 MB)
+Requirement already satisfied: numpy in /u01/Intern/env/duc_test_env/lib/python3.7/site-packages (from mmcv-full) (1.21.2)
+Collecting addict
+  Using cached addict-2.4.0-py3-none-any.whl (3.8 kB)
+Collecting pyyaml
+  Using cached PyYAML-5.4.1-cp37-cp37m-manylinux1_x86_64.whl (636 kB)
+Collecting yapf
+  Using cached yapf-0.31.0-py2.py3-none-any.whl (185 kB)
+Requirement already satisfied: opencv-python>=3 in /u01/Intern/env/duc_test_env/lib/python3.7/site-packages (from mmcv-full) (4.1.2.30)
+Requirement already satisfied: Pillow in /u01/Intern/env/duc_test_env/lib/python3.7/site-packages (from mmcv-full) (8.3.2)
+Collecting packaging
+  Using cached packaging-21.0-py3-none-any.whl (40 kB)
+Requirement already satisfied: pyparsing>=2.0.2 in /u01/Intern/env/duc_test_env/lib/python3.7/site-packages (from packaging->mmcv-full) (2.4.7)
+Installing collected packages: yapf, pyyaml, packaging, addict, mmcv-full
+Successfully installed addict-2.4.0 mmcv-full-1.3.14 packaging-21.0 pyyaml-5.4.1 yapf-0.31.0
+Collecting mmdet==2.16.0
+  Using cached mmdet-2.16.0-py3-none-any.whl (1.2 MB)
+Requirement already satisfied: numpy in /u01/Intern/env/duc_test_env/lib/python3.7/site-packages (from mmdet==2.16.0) (1.21.2)
+Requirement already satisfied: six in /u01/Intern/env/duc_test_env/lib/python3.7/site-packages (from mmdet==2.16.0) (1.16.0)
+Requirement already satisfied: matplotlib in /u01/Intern/env/duc_test_env/lib/python3.7/site-packages (from mmdet==2.16.0) (3.4.3)
+Collecting pycocotools
+  Using cached pycocotools-2.0.2-cp37-cp37m-linux_x86_64.whl
+Collecting terminaltables
+  Using cached terminaltables-3.1.0-py3-none-any.whl
+Requirement already satisfied: pyparsing>=2.2.1 in /u01/Intern/env/duc_test_env/lib/python3.7/site-packages (from matplotlib->mmdet==2.16.0) (2.4.7)
+Requirement already satisfied: cycler>=0.10 in /u01/Intern/env/duc_test_env/lib/python3.7/site-packages (from matplotlib->mmdet==2.16.0) (0.10.0)
+Requirement already satisfied: kiwisolver>=1.0.1 in /u01/Intern/env/duc_test_env/lib/python3.7/site-packages (from matplotlib->mmdet==2.16.0) (1.3.2)
+Requirement already satisfied: pillow>=6.2.0 in /u01/Intern/env/duc_test_env/lib/python3.7/site-packages (from matplotlib->mmdet==2.16.0) (8.3.2)
+Requirement already satisfied: python-dateutil>=2.7 in /u01/Intern/env/duc_test_env/lib/python3.7/site-packages (from matplotlib->mmdet==2.16.0) (2.8.2)
+Requirement already satisfied: setuptools>=18.0 in /u01/Intern/env/duc_test_env/lib/python3.7/site-packages (from pycocotools->mmdet==2.16.0) (58.0.4)
+Collecting cython>=0.27.3
+  Using cached Cython-0.29.24-cp37-cp37m-manylinux1_x86_64.whl (2.0 MB)
+Installing collected packages: cython, terminaltables, pycocotools, mmdet
+Successfully installed cython-0.29.24 mmdet-2.16.0 pycocotools-2.0.2 terminaltables-3.1.0
+Requirement already satisfied: numpy in /u01/Intern/env/duc_test_env/lib/python3.7/site-packages (from -r requirements/build.txt (line 2)) (1.21.2)
+Collecting Polygon3
+  Using cached Polygon3-3.0.9.1-cp37-cp37m-linux_x86_64.whl
+Collecting pyclipper
+  Using cached pyclipper-1.3.0-cp37-cp37m-manylinux_2_5_x86_64.manylinux1_x86_64.whl (123 kB)
+Requirement already satisfied: torch>=1.1 in /u01/Intern/env/duc_test_env/lib/python3.7/site-packages (from -r requirements/build.txt (line 5)) (1.7.1+cu101)
+Collecting imgaug
+  Using cached imgaug-0.4.0-py2.py3-none-any.whl (948 kB)
+Collecting lanms-proper
+  Using cached lanms_proper-1.0.1-cp37-cp37m-manylinux2010_x86_64.whl (182 kB)
+Collecting lmdb
+  Using cached lmdb-1.2.1-cp37-cp37m-manylinux2010_x86_64.whl (299 kB)
+Requirement already satisfied: matplotlib in /u01/Intern/env/duc_test_env/lib/python3.7/site-packages (from -r requirements/runtime.txt (line 4)) (3.4.3)
+Collecting numba>=0.45.1
+  Using cached numba-0.54.0-2-cp37-cp37m-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (3.4 MB)
+g++ -o pse.so -I include  -std=c++11 -O3 -I/u01/Intern/env/duc_test_env/include/python3.7m -I/u01/Intern/env/duc_test_env/include/python3.7m  -Wno-unused-result -Wsign-compare -march=nocona -mtune=haswell -ftree-vectorize -fPIC -fstack-protector-strong -fno-plt -O3 -pipe  -fdebug-prefix-map==/usr/local/src/conda/- -fdebug-prefix-map==/usr/local/src/conda-prefix -fuse-linker-plugin -ffat-lto-objects -flto-partition=none -flto -flto -fuse-linker-plugin -ffat-lto-objects -flto-partition=none -DNDEBUG -fwrapv -O3 -Wall -L/u01/Intern/env/duc_test_env/lib/python3.7/config-3.7m-x86_64-linux-gnu -L/u01/Intern/env/duc_test_env/lib -lpython3.7m -lpthread -ldl  -lutil -lrt -lm  -Xlinker -export-dynamic pse.cpp --shared -fPIC
+Makefile:10: recipe for target 'pse.so' failed
+
