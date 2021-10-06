@@ -316,7 +316,6 @@ class Infer:
                             esem = Ensemble(
                                 output_final_branch, output_merge, temp_step, dict_middle, dict_step, text_list)
                             label = esem.run()
-                            f_txt_i.writelines("esem: "+label+"\n")
                             if width_crop / height_crop < 0.495: #(4/7):
                                 if "yoko" in label.split("/"):
                                     pass
