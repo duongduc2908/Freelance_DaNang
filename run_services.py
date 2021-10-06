@@ -45,7 +45,7 @@ def get_app():
         images = []
         for image_file in image_files:
             img = cv2.imdecode(
-                np.frombuffer(image_file.read(), np.uint8), cv2.IMREAD_UNCHANGED,
+                np.frombuffer(image_file.read(), np.uint8), 3,
             )
             # img = cv2.cvtColor(img , cv2.COLOR_BGR2RGB)
             images.append(img)
