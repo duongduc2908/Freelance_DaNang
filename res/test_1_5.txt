@@ -1,0 +1,6 @@
+output_final_branch: nestle
+esem: nestle/nan/3
+nestle/nan/3
+Chinh: nestle/nan
+Thanh: nan_optipro_3
+text:['nan', 'organic', '3', 'nestle']

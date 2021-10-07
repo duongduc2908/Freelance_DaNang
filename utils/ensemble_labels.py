@@ -286,7 +286,7 @@ class Ensemble():
                 label = 'humana/humana/'
         if self.branch=='f99foods':
             label = 'f99/golilac_grow'
-        label = label.replace('enfamil_grow_A+', 'enfamil_enfa_grow').replace('danone','danone_dutricia')\
+        label = label.replace('enfamil_grow_A+', 'enfamil_enfa_grow').replace('danone','danone_nutricia')\
         .replace('megmilksnowbrand','megmilksnowbrand/guun_up_mbp')\
         .replace('/friso/1','/frisolac/1').replace('/friso/2','/frisolac/2').replace('/friso/3','/frisolac/3')\
         .replace('imperial_dream', 'xo_imperial_dream')\

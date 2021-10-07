@@ -91,20 +91,20 @@
     ],
     "21": [
         "gerber/bot_an_dam/bot_an_dam_gerber_ngu_coc_multigrain_cereal",
-        "gerber/bot_an_dam"
+        "gerber/bot_an_dam/bot_an_dam_gerber_ngu_coc_multigrain_cereal"
     ],
     "22": [
         "gerber/bot_an_dam/bot_an_dam_gerber_organic_oatmeal",
-        "gerber/bot_an_dam"
+        "gerber/bot_an_dam/bot_an_dam_gerber_organic_oatmeal"
     ],
     "23": [
         "glico/hop_nhom/glico_icreo_so_0",
         "glico/hop_giay/glico_icreo_so_0_hop_giay",
-        "glico/glico_icreo_so_0"
+        "glico/glico_icreo/0"
     ],
     "24": [
         "glico/hop_giay/glico_icreo_so_1_hop_giay",
-        "glico/glico_icreo_so_1"
+        "glico/glico_icreo/1"
         
     ],
     "25": [

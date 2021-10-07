@@ -1,0 +1,6 @@
+output_final_branch: royal_ausnz
+esem: royal_ausnz/royal_ausnz_goat/2
+royal_ausnz/royal_ausnz_goat/2
+Chinh: royal_ausnz/royal_ausnz_goat
+Thanh: sua_de_hoang_gia_uc_royal_ausnz_goat_follow-on_formula_2
+text:['2', 'goat', 'follow-on', '6-12', 'formula', 'on', 'months', 'australian']
