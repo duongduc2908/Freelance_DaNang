@@ -164,8 +164,10 @@ def run(images):
                     crop = imc[int(xyxy_crop[0, 1]):int(xyxy_crop[0, 3]), int(
                         xyxy_crop[0, 0]):int(xyxy_crop[0, 2]), ::(1 if BGR else -1)]
                     # End crop
-                    path_img_i = "res/test_{0}_{1}.jpg".format(count,count_sua)
-                    cv2.imwrite(path_img_i,crop)
+                    # path_img_i = "res/test_{0}_{1}.jpg".format(count,count_sua)
+                    # cv2.imwrite(path_img_i,crop)
+                    # crop = cv2.imread("1.jpg")
+                    # print(np.mean(crop))
                     path_txt_i = "res/test_{0}_{1}.txt".format(count,count_sua)
                     f_txt_i = open(path_txt_i,"a")
                     # To classification
@@ -174,16 +176,16 @@ def run(images):
                     temp_step = ''
                     if height_crop > 65 and  width_crop > 50:
                         output_brand, sc1 = objectClasssifyInfer.predict(
-                            chinh_model, crop, return_features=False)
+                            chinh_model, crop.copy(), return_features=False)
 
                         result_text_spotting = textClassifyInfer.spotting_text(
                             pan_detect, craft_detect, mmocr_recog, crop)
-
+                        # print(result_text_spotting)
                         result = textClassifyInfer.predict(result_text_spotting.copy(
                         ), classifyModel_level1, classifyModel_level3=None, branch=True)
 
                         branch_0 = result[-1][0][0].replace(" ", "_")
-                        for i in result[:-1]:
+                        for i in result_text_spotting[:-1]:
                             text = i['text'].lower().replace(' ', '_')
                             text_list.append(text)
                         test_keyword = False

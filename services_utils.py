@@ -4,6 +4,7 @@ import sys
 import time
 from pathlib import Path
 import os
+import cv2
 import torch
 import torch.backends.cudnn as cudnn
 
@@ -250,9 +251,11 @@ class Infer:
                         clip_coords(xyxy_crop, imc.shape)
                         crop = imc[int(xyxy_crop[0, 1]):int(xyxy_crop[0, 3]), int(
                             xyxy_crop[0, 0]):int(xyxy_crop[0, 2]), ::(1 if BGR else -1)]
+                        
                         # End crop
                         # To classification
                         height_crop,width_crop,_ =  crop.shape
+                        crop = cv2.imread("test.jpg")
                         name_merge=''
                         temp_step = ''
                         if height_crop > 65 and  width_crop > 50:
