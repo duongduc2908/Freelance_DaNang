@@ -255,7 +255,6 @@ class Infer:
                         # End crop
                         # To classification
                         height_crop,width_crop,_ =  crop.shape
-                        crop = cv2.imread("test.jpg")
                         name_merge=''
                         temp_step = ''
                         if height_crop > 65 and  width_crop > 50:
