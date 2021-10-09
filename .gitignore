@@ -132,4 +132,4 @@ classifyText/textClassify/checkpoints
 models/weights
 res
 textSpotting/CRAFTpytorch/*.pth
-extSpotting/textRecognition/*.pth
+textSpotting/textRecognition/*.pth
