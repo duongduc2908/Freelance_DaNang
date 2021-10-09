@@ -1,6 +1,0 @@
-output_final_branch: bellamyorganic
-esem: bellamyorganic/bellamys_organic/2
-bellamyorganic/bellamys_organic/2
-Chinh: bellamyorganic/bellamys_organic
-Thanh: other
-text:['2', "bellamy's", 'organic', 's.']

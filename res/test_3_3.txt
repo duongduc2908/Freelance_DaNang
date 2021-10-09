@@ -1,6 +1,0 @@
-output_final_branch: bellamyorganic
-esem: bellamyorganic/bot_an_dam/6
-bellamyorganic/bot_an_dam/6
-Chinh: friesland_campina_dutch_lady/friso
-Thanh: bot_an_dam_bellamy
-text:['6', 'ballamy', 'ban']

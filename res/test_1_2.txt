@@ -1,6 +1,0 @@
-output_final_branch: nestle
-esem: nestle
-nestle
-Chinh: nestle/nan
-Thanh: other
-text:["viv'd", 'dounts', 'imo', 'kind', 'swiss', '180ml', 'threebystephesis', 'dekhang', 'nestie', 'themouong', 'hapthu', '2-fl', 'eye', 'khong', 'risch']
