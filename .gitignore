@@ -127,3 +127,9 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+classifyImage/weights
+classifyText/textClassify/checkpoints
+models/weights
+res
+textSpotting/CRAFTpytorch/*.pth
+extSpotting/textRecognition/*.pth
