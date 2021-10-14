@@ -29,7 +29,7 @@ fi
 pip install pyspellchecker==0.6.2
 pip install ngram==3.3.2
 pip install -U scikit-learn
-pip install tensorflow-gpu==2.4.1
+pip install tensorflow==2.4.1
 pip install pandas
 pip install tqdm
 pip install seaborn
