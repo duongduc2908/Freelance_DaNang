@@ -123,22 +123,15 @@ def sort_pts(pts, max_pts):
     return new_poly[:max_pts]
 
 def textSpotting(config_file,detect1, detect2, recog, img, max_word=16):
-    # mmocr_det_res = detect2.readtext(img=[img.copy()])
-    # pts_mmocr = np.array([np.array(pts[:8]).reshape((-1,2)) for pts in mmocr_det_res[0]['boundary_result']])
-    # pts_mmocr[np.where(pts_mmocr < 0)] = 0
-
     word_boxes = extract_wordbox(detect2, img)
 
 
-    # preds, pts_pan, t = detect1.predict(img=img.copy())
     poly = extract_wordbox_pan(config_file, detect1, img)
     pts_pan = np.array([box.reshape((4,2)) for box in poly])
     pts_pan[np.where(pts_pan < 0)] = 0
-    # pts_pan = expand_box(pts_pan)
+
 
     pts = ensemble(word_boxes, pts_pan) 
-    # remove small text
-    # pts = remove_small_text(pts.copy())
     # sort and take up to max_word poly
     pts = sort_pts(pts, max_word)
     yolo = convert_boxPoint2Yolo(pts.copy(), img.shape)
@@ -147,8 +140,9 @@ def textSpotting(config_file,detect1, detect2, recog, img, max_word=16):
     for idx,crop in enumerate(crop_imgs):
         if crop is None:
             crop_imgs.pop(idx)
-    # result_recog = recog.readtext(img=crop_imgs.copy(), batch_mode=True, single_batch_size=max_word)
-
+            pts.pop(idx)
+    
+    # recog text
     all_crop_img = [Image.fromarray(cv2.cvtColor(item, cv2.COLOR_BGR2RGB)).convert('L') for item in crop_imgs]
     result_recog = recog_model.infer(images=all_crop_img)
     
@@ -205,8 +199,11 @@ def word2line(result, img):
     new_res = []
     zero_mask = np.zeros(img.shape[:2]).astype('uint8')
     zero_mask_copy = zero_mask.copy()
+    dilate_param = 20
     for res in result:
         x,y,w,h = cv2.boundingRect(res['boxes'].astype(int))
+        if h > 20:
+            dilate_parm = h
         zero_mask[y+int(0.2*h):y+int(0.8*h), x:x+w] = 125
         # zero_mask = cv2.polylines(zero_mask, [res['boxes'].astype(int)], True, 255, -1)
 
@@ -217,7 +214,7 @@ def word2line(result, img):
         item['text'] = res['text']
         new_res.append(item)
 
-    kernel = np.ones((1, 20), np.uint8)    
+    kernel = np.ones((1, dilate_param), np.uint8)   
     zero_mask = cv2.dilate(zero_mask, kernel, iterations=1)
 
     contours, hierarchy = cv2.findContours(zero_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
