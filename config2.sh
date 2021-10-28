@@ -1,12 +1,10 @@
 pip install torch==1.7.1+cu101 torchvision==0.8.2+cu101 torchaudio==0.7.2 -f https://download.pytorch.org/whl/torch_stable.html
 pip install mmcv-full -f https://download.openmmlab.com/mmcv/dist/cu101/torch1.7.0/index.html
 
-cd classifyText
-git clone https://github.com/PhiDCH/new_pan newpan
-cd newpan
+cd classifyText/newpan
 bash compile.sh
 gdown --id 1dXMKs1VAltre6RCtDHYft-2q8oCtC_Yh -O checkpoint/pan.pth.tar
-cd ../..
+cd ../../
 
 # download recog model
 gdown --id 1LVyPRbLm_x4qtFHg3CjEfE18763UQCXl -O textSpotting/textRecognitionCRNN_finetune_v1.pth
