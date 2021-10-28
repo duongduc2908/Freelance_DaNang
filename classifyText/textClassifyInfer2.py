@@ -137,10 +137,17 @@ def textSpotting(config_file,detect1, detect2, recog, img, max_word=16):
     yolo = convert_boxPoint2Yolo(pts.copy(), img.shape)
     
     crop_imgs = [crop_with_padding(img, poly) for poly in pts.copy()]
+    remove_idx = []
     for idx,crop in enumerate(crop_imgs):
         if crop is None:
-            crop_imgs.pop(idx)
-            pts.pop(idx)
+            remove_idx.append(idx)
+    i = 0
+    for idx in remove_idx:
+        crop_imgs.pop(idx-i)
+        i += 1
+    
+    pts = np.delete(pts, remove_idx, axis=0)
+    yolo = np.delete(yolo, remove_idx, axis=0)
     
     # recog text
     all_crop_img = [Image.fromarray(cv2.cvtColor(item, cv2.COLOR_BGR2RGB)).convert('L') for item in crop_imgs]
