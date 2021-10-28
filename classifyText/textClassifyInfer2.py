@@ -122,7 +122,7 @@ def sort_pts(pts, max_pts):
     new_poly = pts[np.argsort(heights)][::-1]
     return new_poly[:max_pts]
 
-def textSpotting(config_file,detect1, detect2, recog, img, max_word=16):
+def textSpotting(config_file,detect1, detect2, recog_model, img, max_word=16):
     word_boxes = extract_wordbox(detect2, img)
 
 

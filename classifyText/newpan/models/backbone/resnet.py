@@ -197,7 +197,7 @@ def resnet18(pretrained=False, **kwargs):
     model = ResNet(BasicBlock, [2, 2, 2, 2], **kwargs)
     if pretrained:
         # model.load_state_dict(load_url(model_urls['resnet18']), strict=False)
-        path_pretrain = 'newpan/pretrained/resnet18-imagenet.pth'
+        path_pretrain = 'classifyText/newpan/pretrained/resnet18-imagenet.pth'
         model.load_state_dict(torch.load(path_pretrain, map_location=None), strict=False)
     return model
 

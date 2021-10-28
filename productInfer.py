@@ -28,7 +28,7 @@ from spellchecker import SpellChecker
 
 from utils.general import xywh2xyxy,clip_coords
 from textSpotting import textSpottingInfer
-from classifyText import textClassifyInfer
+from classifyText import textClassifyInfer2
 from classifyImage import objectClasssifyInfer
 import hashlib
 
@@ -49,7 +49,7 @@ def load_model_yolo(weights=['models/weights/binh_new_best.pt', 'models/weights/
     return model_binh_sua.eval(),model_sua.eval()
 
 craft_detect, model_recognition = textSpottingInfer.load_model_1()
-mmocr_recog,pan_detect,classifyModel_level1,dict_model = textClassifyInfer.load_model()
+mmocr_recog,pan_detect,classifyModel_level1,dict_model = textClassifyInfer2.load_model()
 chinh_model,model_step,labels_end,labels_branch,dict_middle,dict_step= objectClasssifyInfer.load_model()
 model_binh_sua,model_sua = load_model_yolo()
 print(list(model_binh_sua.parameters())[-1])
@@ -178,10 +178,10 @@ def run(images):
                         output_brand, sc1 = objectClasssifyInfer.predict(
                             chinh_model, crop.copy(), return_features=False)
 
-                        result_text_spotting = textClassifyInfer.spotting_text(
+                        result_text_spotting = textClassifyInfer2.spotting_text(
                             pan_detect, craft_detect, mmocr_recog, crop)
                         # print(result_text_spotting)
-                        result = textClassifyInfer.predict(result_text_spotting.copy(
+                        result = textClassifyInfer2.predict(result_text_spotting.copy(
                         ), classifyModel_level1, classifyModel_level3=None, branch=True)
 
                         branch_0 = result[-1][0][0].replace(" ", "_")
@@ -228,7 +228,7 @@ def run(images):
                         else:
                             if output_final_branch in dict_model.keys():
                                 classifyModel_level3 = dict_model[output_final_branch]                                          
-                                result_2 = textClassifyInfer.predict(
+                                result_2 = textClassifyInfer2.predict(
                                     result_text_spotting, classifyModel_level1, classifyModel_level3, step=True, added_text=''.replace(' ', '_'))
                                 temp_step = result_2[-1][0].replace(
                                     " ", "_")

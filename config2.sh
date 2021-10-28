@@ -7,7 +7,7 @@ gdown --id 1dXMKs1VAltre6RCtDHYft-2q8oCtC_Yh -O checkpoint/pan.pth.tar
 cd ../../
 
 # download recog model
-gdown --id 1LVyPRbLm_x4qtFHg3CjEfE18763UQCXl -O textSpotting/textRecognitionCRNN_finetune_v1.pth
+gdown --id 1LVyPRbLm_x4qtFHg3CjEfE18763UQCXl -O textSpotting/textRecognition/CRNN_finetune_v1.pth
 
 if ! [ -f "milk_classification/checkpoints.zip" ]
 then
