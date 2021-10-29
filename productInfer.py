@@ -85,7 +85,7 @@ def run(images):
         preds = model_object_detect(img, augment=False, visualize=False)[0]
 
         # NMS
-        preds = non_max_suppression(preds, 0.4, iou_thres=0.45, classes=None, agnostic=True, max_det=1000)
+        preds = non_max_suppression(preds, 0.447, iou_thres=0.45, classes=None, agnostic=True, max_det=1000)
 
         # Process predictions binh sua
         for i, pred in enumerate(preds):  # detections per image
