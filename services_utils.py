@@ -182,7 +182,7 @@ class Infer:
             t1 = time_sync()
             preds = model_object_detect(img, augment=False, visualize=False)[0]
             # NMS
-            preds = non_max_suppression(preds, 0.4, iou_thres=0.45, classes=None, agnostic=True, max_det=1000)
+            preds = non_max_suppression(preds, conf_thres=0.447, iou_thres=0.45, classes=None, agnostic=True, max_det=1000)
             for i, pred in enumerate(preds):
                 s, im0 = '', im0s.copy()
                 gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]
