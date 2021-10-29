@@ -14,6 +14,7 @@ import os
 import cv2
 import torch
 import torch.backends.cudnn as cudnn
+import glob
 FILE = Path(__file__).absolute()
 sys.path.append(FILE.parents[0].as_posix())  # add yolov5/ to path
 
@@ -34,25 +35,16 @@ import hashlib
 
 device = select_device(0)
 
-def load_model_yolo(weights=['models/weights/binh_new_best.pt', 'models/weights/sua_new_best_2.pt'],
+def load_model_yolo(weights=['models/weights/best.pt'],
         ):
-    # Load model
-    w = weights[0] if isinstance(weights, list) else weights
-    classify, suffix = False, Path(w).suffix.lower()
-    pt, onnx, tflite, pb, graph_def = (suffix == x for x in ['.pt', '.onnx', '.tflite', '.pb', ''])  # backend
-    stride, names = 64, [f'class{i}' for i in range(1000)]  # assign defaults
-
-    model_binh_sua = attempt_load(
+    model_object_detect = attempt_load(
         weights[0], map_location=device)  # load FP32 model
-    model_sua = attempt_load(
-        weights[1], map_location=device)  # load FP32 model
-    return model_binh_sua.eval(),model_sua.eval()
+    return model_object_detect.eval()
 
 craft_detect, model_recognition = textSpottingInfer.load_model_1()
 mmocr_recog,pan_detect,classifyModel_level1,dict_model = textClassifyInfer2.load_model()
 chinh_model,model_step,labels_end,labels_branch,dict_middle,dict_step= objectClasssifyInfer.load_model()
-model_binh_sua,model_sua = load_model_yolo()
-print(list(model_binh_sua.parameters())[-1])
+model_object_detect = load_model_yolo()
 
 spell = SpellChecker(language=None,)  # loads default word frequency list
 spell.word_frequency.load_text_file('corpus.txt')
@@ -66,25 +58,19 @@ for line in lines:
 
 
 def run(images):
-    import numpy as np
-    for image in images: print(image); print(image.shape); np.save('image1.npy', image)
     results_end = []
-    stride_binh = int(model_binh_sua.stride.max())  # model stride
-    names_binh = model_binh_sua.module.names if hasattr(model_binh_sua, 'module') else model_binh_sua.names  # get class names
-    names_sua = model_sua.module.names if hasattr(model_sua, 'module') else model_sua.names  # get class names
-    imgsz_binh = check_img_size(imgsz=640, s=stride_binh)  # check image size
+    stride_object_detect = int(model_object_detect.stride.max())  # model stride
+    imgsz_object_detect = check_img_size(imgsz=640, s=stride_object_detect)  # check image size
 
     # Load datasets
-    dataset = LoadImages(images, img_size=imgsz_binh, stride=stride_binh)
+    dataset = LoadImages(images, img_size=imgsz_object_detect, stride=stride_object_detect)
     # Run inference
-    model_binh_sua(torch.zeros(1, 3, imgsz_binh, imgsz_binh).to(
-        device).type_as(next(model_binh_sua.parameters())))  # run once
-    model_sua(torch.zeros(1, 3, imgsz_binh, imgsz_binh).to(
-        device).type_as(next(model_sua.parameters())))  # run once
+    model_object_detect(torch.zeros(1, 3, imgsz_object_detect, imgsz_object_detect).to(
+        device).type_as(next(model_object_detect.parameters())))  # run once
 
-    t0 = time.time()
     count=0
     for img, im0s in dataset:
+        os.makedirs("res",exist_ok=True)
         count+=1
         path_img = "res/test_{0}.jpg".format(count)
         item = {}
@@ -96,171 +82,142 @@ def run(images):
 
         # Inference
         t1 = time_sync()
-        pred_binh = model_binh_sua(img, augment=False, visualize=False)[0]
-        pred_sua = model_sua(img, augment=False, visualize=False)[0]
+        preds = model_object_detect(img, augment=False, visualize=False)[0]
 
         # NMS
-        pred_binh = non_max_suppression(pred_binh, 0.4, iou_thres=0.45, classes=None, agnostic=True, max_det=1000)
-        pred_sua = non_max_suppression(pred_sua, conf_thres=0.3, iou_thres=0.45, classes=None, agnostic=True, max_det=1000)
-        t2 = time_sync()
+        preds = non_max_suppression(preds, 0.4, iou_thres=0.45, classes=None, agnostic=True, max_det=1000)
 
         # Process predictions binh sua
-        for i, (det_binh, det_sua) in enumerate(zip(pred_binh, pred_sua)):  # detections per image
-            print('#' * 5 + 'process predicts binh sua' + '#' * 5)
-            print(i)
-            print(det_binh)
-            print(det_sua)
-            print('#' * 10)
+        for i, pred in enumerate(preds):  # detections per image
             s, im0 = '', im0s.copy()
             gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]
             imc = im0.copy()
             item['height_width'] = [im0.shape[0],im0.shape[1]]
-            if len(det_binh):
-                det_binh[:, :4] = scale_coords(
-                    img.shape[2:], det_binh[:, :4], im0.shape).round()
-
-                # Write results
-                item['binh_bu'] = []
-                item['num_vu'] = []
-                item['tre_em'] = []
-                for *xyxy, conf, cls in reversed(det_binh):
+            if len(pred):
+                pred[:, :4] = scale_coords(
+                    img.shape[2:], pred[:, :4], im0.shape).round()
+                for *xyxy, conf, cls in reversed(pred):
+                    # Write results
+                    item['binh_bu'] = []
+                    item['num_vu'] = []
+                    item['tre_em'] = []
+                    item['sua'] = []
+                    count_sua =0
                     xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
-                    # c = int(cls)
-                    if int(cls) == 0:
-                        item['binh_bu'].append(xywh)
-                        # im0 = plot_one_box(xyxy, im0, label='binh_bu', color=colors(c, True), line_width=3)
-                    if int(cls) == 1:
-                        item['num_vu'].append(xywh)
-                        # im0 = plot_one_box(xyxy, im0, label='num_vu', color=colors(c, True), line_width=3)
-                    if int(cls) == 2:
-                        item['tre_em'].append(xywh)
-                        # im0 = plot_one_box(xyxy, im0, label='tre_em', color=colors(c, True), line_width=3)
-                    
-            else:
-                item['binh_bu'] = None
-                item['num_vu'] = None
-                item['tre_em'] = None
-            count_sua = 0
-            if len(det_sua):
-                # Rescale boxes from img_size to im0 size
-                det_sua[:, :4] = scale_coords(img.shape[2:], det_sua[:, :4], im0.shape).round()
+                    if int(cls) in [2,3,4]:
+                        if int(cls) == 2:
+                            item['binh_bu'].append(xywh)
+                            im0 = plot_one_box(xyxy, im0, label='binh_bu', color=colors(c, True), line_width=3)
+                        if int(cls) == 3:
+                            item['num_vu'].append(xywh)
+                            im0 = plot_one_box(xyxy, im0, label='num_vu', color=colors(c, True), line_width=3)
+                        if int(cls) == 4:
+                            item['tre_em'].append(xywh)
+                            im0 = plot_one_box(xyxy, im0, label='tre_em', color=colors(c, True), line_width=3)
+                    else:
+                        item['binh_bu'] = None
+                        item['num_vu'] = None
+                        item['tre_em'] = None
 
-                # Write results
-                item['sua'] = []
-                count_sua =0
-                for *xyxy, conf, cls in reversed(det_sua):
-                    count_sua+=1
-                    text_list = [] 
-                    # Output hop sua
-                    xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
-                    # Xu ly box 
-                    BGR = True
-                    xyxy_test = torch.tensor(xyxy).view(-1, 4)
-                    b = xyxy2xywh(xyxy_test)  # boxes
-                    b[:, 2:] = b[:, 2:] * 1.02 + \
-                        10  # box wh * gain + pad
-                    xyxy_crop = xywh2xyxy(b).long()
-                    clip_coords(xyxy_crop, imc.shape)
-                    crop = imc[int(xyxy_crop[0, 1]):int(xyxy_crop[0, 3]), int(
-                        xyxy_crop[0, 0]):int(xyxy_crop[0, 2]), ::(1 if BGR else -1)]
-                    # End crop
-                    # path_img_i = "res/test_{0}_{1}.jpg".format(count,count_sua)
-                    # cv2.imwrite(path_img_i,crop)
-                    # crop = cv2.imread("1.jpg")
-                    # print(np.mean(crop))
-                    path_txt_i = "res/test_{0}_{1}.txt".format(count,count_sua)
-                    f_txt_i = open(path_txt_i,"a")
-                    # To classification
-                    height_crop,width_crop,_ =  crop.shape
-                    name_merge=''
-                    temp_step = ''
-                    if height_crop > 65 and  width_crop > 50:
-                        output_brand, sc1 = objectClasssifyInfer.predict(
-                            chinh_model, crop.copy(), return_features=False)
+                    if int(cls) in [0,1]:
+                        count_sua+=1
+                        text_list = [] 
+                        # Output hop sua
+                        xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
+                        # Xu ly box 
+                        BGR = True
+                        xyxy_test = torch.tensor(xyxy).view(-1, 4)
+                        b = xyxy2xywh(xyxy_test)  # boxes
+                        b[:, 2:] = b[:, 2:] * 1.02 + \
+                            10  # box wh * gain + pad
+                        xyxy_crop = xywh2xyxy(b).long()
+                        clip_coords(xyxy_crop, imc.shape)
+                        crop = imc[int(xyxy_crop[0, 1]):int(xyxy_crop[0, 3]), int(
+                            xyxy_crop[0, 0]):int(xyxy_crop[0, 2]), ::(1 if BGR else -1)]
+                        # To classification
+                        height_crop,width_crop,_ =  crop.shape
+                        name_merge=''
+                        temp_step = ''
+                        if height_crop > 65 and  width_crop > 50:
+                            output_brand, sc1 = objectClasssifyInfer.predict(
+                                chinh_model, crop.copy(), return_features=False)
 
-                        result_text_spotting = textClassifyInfer2.spotting_text(
-                            pan_detect, craft_detect, mmocr_recog, crop)
-                        # print(result_text_spotting)
-                        result = textClassifyInfer2.predict(result_text_spotting.copy(
-                        ), classifyModel_level1, classifyModel_level3=None, branch=True)
+                            result_text_spotting = textClassifyInfer2.spotting_text(
+                                pan_detect, craft_detect, mmocr_recog, crop)
+                            # print(result_text_spotting)
+                            result = textClassifyInfer2.predict(result_text_spotting.copy(
+                            ), classifyModel_level1, classifyModel_level3=None, branch=True)
 
-                        branch_0 = result[-1][0][0].replace(" ", "_")
-                        for i in result_text_spotting[:-1]:
-                            text = i['text'].lower().replace(' ', '_')
-                            text_list.append(text)
-                        test_keyword = False
-                        for text_ in text_list:
-                            if text_ in keywords:
-                                test_keyword = True
-                                break
-                        c = (list(labels_branch.keys())
-                            [output_brand].strip())
-                        if test_keyword == True:
-                            output_final_branch = result[-1][0][0]
-                        elif len(text_list) == 0 and sc1 < 0.98:
-                            output_final_branch = 'Unknow'
-                        elif len(text_list) >= 4:
-                            branch_0 = c
-                            if sc1 > 0.95:
-                                output_final_branch = c
-                            else:
+                            branch_0 = result[-1][0][0].replace(" ", "_")
+                            for i in result_text_spotting[:-1]:
+                                text = i['text'].lower().replace(' ', '_')
+                                text_list.append(text)
+                            test_keyword = False
+                            for text_ in text_list:
+                                if text_ in keywords:
+                                    test_keyword = True
+                                    break
+                            c = (list(labels_branch.keys())
+                                [output_brand].strip())
+                            if test_keyword == True:
+                                output_final_branch = result[-1][0][0]
+                            elif len(text_list) == 0 and sc1 < 0.98:
                                 output_final_branch = 'Unknow'
-                        else:
-                            if sc1 > 0.93:
-                                output_final_branch = c
+                            elif len(text_list) >= 4:
+                                branch_0 = c
+                                if sc1 > 0.95:
+                                    output_final_branch = c
+                                else:
+                                    output_final_branch = 'Unknow'
                             else:
-                                output_final_branch = 'Unknow'
-                        output_final_branch = output_final_branch.replace(" ", "_")
-                        label = output_final_branch
-                        f_txt_i.writelines("output_final_branch: "+output_final_branch+"\n")
-                        check_list = False
-                        output_merge, _ = objectClasssifyInfer.predict_merge_model(
-                            model_step, crop)
-                        if len(dict_middle[str(output_merge)]) > 1:
-                            check_list = True
-                        name_merge = dict_middle[str(
-                            output_merge)][-1]
-                        brand_merge = name_merge.split("/")[0]
+                                if sc1 > 0.93:
+                                    output_final_branch = c
+                                else:
+                                    output_final_branch = 'Unknow'
+                            output_final_branch = output_final_branch.replace(" ", "_")
+                            label = output_final_branch
+                            check_list = False
+                            output_merge, _ = objectClasssifyInfer.predict_merge_model(
+                                model_step, crop)
+                            if len(dict_middle[str(output_merge)]) > 1:
+                                check_list = True
+                            name_merge = dict_middle[str(
+                                output_merge)][-1]
+                            brand_merge = name_merge.split("/")[0]
 
-                        temp_step = None
-                        if output_final_branch in ["f99foods", "heinz", "bubs_australia", "megmilksnowbrand", "meiji"]:
-                            pass
-                        else:
-                            if output_final_branch in dict_model.keys():
-                                classifyModel_level3 = dict_model[output_final_branch]                                          
-                                result_2 = textClassifyInfer2.predict(
-                                    result_text_spotting, classifyModel_level1, classifyModel_level3, step=True, added_text=''.replace(' ', '_'))
-                                temp_step = result_2[-1][0].replace(
-                                    " ", "_")
-                                brand_text = meger_label_branch(
-                                    labels_end, 2, temp_step)
-                        esem = Ensemble(
-                            output_final_branch, output_merge, temp_step, dict_middle, dict_step, text_list)
-                        label = esem.run()
-                        f_txt_i.writelines("esem: "+label+"\n")
-                        if width_crop / height_crop < 0.495: #(4/7):
-                            if "yoko" in label.split("/"):
+                            temp_step = None
+                            if output_final_branch in ["f99foods", "heinz", "bubs_australia", "megmilksnowbrand", "meiji"]:
                                 pass
                             else:
-                                label = output_final_branch
-                                if label == "f99foods":
-                                    label = 'f99//'
-                            
-                    else:
-                        label = "size nho ({0} x {1})".format(width_crop,height_crop)
-                    c = int(cls)
-                    im0 = plot_one_box(xyxy, im0, label=label, color=colors(c, True), line_width=3)
-                    # Output label
-                    item['sua'].append({
-                        'toa_do': xywh,
-                        'label':label,
-                        'text':text_list
-                    })
-                    
-                    f_txt_i.writelines(label+"\n")
-                    f_txt_i.writelines("Chinh: "+str(name_merge)+"\n")
-                    f_txt_i.writelines("Thanh: "+str(temp_step)+"\n")
-                    f_txt_i.writelines("text:"+str(text_list) +"\n")
+                                if output_final_branch in dict_model.keys():
+                                    classifyModel_level3 = dict_model[output_final_branch]                                          
+                                    result_2 = textClassifyInfer2.predict(
+                                        result_text_spotting, classifyModel_level1, classifyModel_level3, step=True, added_text=''.replace(' ', '_'))
+                                    temp_step = result_2[-1][0].replace(
+                                        " ", "_")
+                                    brand_text = meger_label_branch(
+                                        labels_end, 2, temp_step)
+                            esem = Ensemble(
+                                output_final_branch, output_merge, temp_step, dict_middle, dict_step, text_list)
+                            label = esem.run()
+                            if width_crop / height_crop < 0.495: #(4/7):
+                                if "yoko" in label.split("/"):
+                                    pass
+                                else:
+                                    label = output_final_branch
+                                    if label == "f99foods":
+                                        label = 'f99//'
+                                
+                        else:
+                            label = "size nho ({0} x {1})".format(width_crop,height_crop)
+                        c = int(cls)
+                        im0 = plot_one_box(xyxy, im0, label=label, color=colors(c, True), line_width=3)
+                        # Output label
+                        item['sua'].append({
+                            'toa_do': xywh,
+                            'label':label,
+                            'text':text_list
+                        })
                 
                 # Text banner
                 result_text = textSpottingInfer.predict(
@@ -275,9 +232,6 @@ def run(images):
                     list_text.append((text))
 
                 item['text_banner']= list_text
-                # f_txt.writelines("====TEXT BANNER===\n")
-                # f_txt.writelines(str(list_text))
-                # Output text banner
             else:
                 item['text_banner']=[]
                 item['sua']={
@@ -286,17 +240,15 @@ def run(images):
                         'text':None
                     }
             cv2.imwrite(path_img,im0)
-            # f_txt.writelines("text_banner:"+str(list_text) +"\n")
             results_end.append(item)
     return results_end
 
 
-lists_image=[]
-import glob
-for path in glob.glob("/u01/Intern/TEST/*"):
-    lists_image.append(cv2.imread(path))
-run(lists_image)
-
-
-
-
+if __name__ =='__main__':
+    arg = argparse.ArgumentParser()
+    arg.add_argument('--dir', type=str, default='', help='specific what task you want to excute')
+    opt = arg.parse_args()
+    lists_image=[]
+    for path in glob.glob(opt.dir + "/*"):
+        lists_image.append(cv2.imread(path))
+    run(lists_image)
