@@ -22,14 +22,14 @@ import numpy as np
 
 from utils.general import xywh2xyxy, clip_coords
 from textSpotting import textSpottingInfer
-from classifyText import textClassifyInfer
+from classifyText import textClassifyInfer2
 from classifyImage import objectClasssifyInfer
 
 model_path_recognition = 'textSpotting/textRecognition/best_accuracy.pth'
 craft_path = 'textSpotting/CRAFTpytorch/craft_mlt_25k.pth'
 
-mmocr_config_dir = 'classifyText/mmocr1/configs/'
-pannet_model_path = 'classifyText/pan/pretrain/pannet_wordlevel.pth'
+recog_model_dir = 'classifyText/mmocr1/configs/'
+pannet_model_path = 'classifyText/newpan/checkpoint/pan.pth.tar'
 brand_text_model_path = 'classifyText/textClassify/checkpoints/product/product_classifier_level1.pkl'
 step_model_dir_path = "classifyText/textClassify/checkpoints/product/brands/"
 
@@ -68,8 +68,8 @@ def load_model(device):
         model_path_recognition=model_path_recognition,
         craft_path=craft_path,
     )
-    mmocr_recog, pan_detect, classifyModel_level1, dict_model = textClassifyInfer.load_model(
-        mmocr_config_dir=mmocr_config_dir,
+    mmocr_recog, pan_detect, classifyModel_level1, dict_model = textClassifyInfer2.load_model(
+        recog_model_dir=recog_model_dir,
         pannet_model_path=pannet_model_path,
         brand_text_model_path=brand_text_model_path,
         step_model_dir_path=step_model_dir_path,
@@ -104,7 +104,7 @@ def load_model(device):
             dict_middle,
             dict_step,
         ),
-        (model_object_detect),
+        model_object_detect,
     )
 
 
@@ -171,7 +171,6 @@ class Infer:
         # Run inference
         model_object_detect(torch.zeros(1, 3, imgsz_object_detect, imgsz_object_detect).to(
             device).type_as(next(model_object_detect.parameters())))  # run once
-
         for img, im0s in dataset:
             item = {}
             img = torch.from_numpy(img).to(device)
@@ -179,15 +178,6 @@ class Infer:
             img /= 255.0  # 0 - 255 to 0.0 - 1.0
             if len(img.shape) == 3:
                 img = img[None]  # expand for batch dim
-
-            # Inference
-            item = {}
-            img = torch.from_numpy(img).to(device)
-            img = img.float()  # uint8 to fp16/32
-            img /= 255.0  # 0 - 255 to 0.0 - 1.0
-            if len(img.shape) == 3:
-                img = img[None]  # expand for batch dim
-
             # Inference
             t1 = time_sync()
             preds = model_object_detect(img, augment=False, visualize=False)[0]
@@ -198,16 +188,15 @@ class Infer:
                 gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]
                 imc = im0.copy()
                 item['height_width'] = [im0.shape[0],im0.shape[1]]
+                item['binh_bu'] = []
+                item['num_vu'] = []
+                item['tre_em'] = []
+                item['sua'] = []
                 if len(pred):
                     pred[:, :4] = scale_coords(
                         img.shape[2:], pred[:, :4], im0.shape).round()
                     for *xyxy, conf, cls in reversed(pred):
                         # Write results
-                        item['binh_bu'] = []
-                        item['num_vu'] = []
-                        item['tre_em'] = []
-                        item['sua'] = []
-                        count_sua =0
                         xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
                         if int(cls) in [2,3,4]:
                             if int(cls) == 2:
@@ -216,13 +205,8 @@ class Infer:
                                 item['num_vu'].append(xywh)
                             if int(cls) == 4:
                                 item['tre_em'].append(xywh)
-                        else:
-                            item['binh_bu'] = None
-                            item['num_vu'] = None
-                            item['tre_em'] = None
 
                         if int(cls) in [0,1]:
-                            count_sua+=1
                             text_list = [] 
                             # Output hop sua
                             xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
