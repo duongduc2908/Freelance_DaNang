@@ -4,7 +4,7 @@ cd ../../
 
 if ! [ -f "checkpoints.zip" ]
 then
-    gdown --id 1Org3YirFS74lGIH2T-46YflJYUP8K9l9
+    gdown --id 123ZMlCLpq0CH2HQSMYfXm9Fqoq7b3ABM
     unzip checkpoints.zip
     rm -f checkpoints.zip
 fi
