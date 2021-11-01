@@ -219,7 +219,7 @@ class Infer:
                             xyxy_crop = xywh2xyxy(b).long()
                             clip_coords(xyxy_crop, imc.shape)
                             crop = imc[int(xyxy_crop[0, 1]):int(xyxy_crop[0, 3]), int(
-                                xyxy_crop[0, 0]):int(xyxy_crop[0, 2]), ::(1 if BGR else -1)].c
+                                xyxy_crop[0, 0]):int(xyxy_crop[0, 2]), ::(1 if BGR else -1)].copy()
                             
                             ignord = np.zeros_like(crop)
                             imc[int(xyxy_crop[0, 1]):int(xyxy_crop[0, 3]), int(xyxy_crop[0, 0]):int(xyxy_crop[0, 2]), ::(1 if BGR else -1)] = ignord
