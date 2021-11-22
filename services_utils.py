@@ -173,7 +173,6 @@ class Infer:
 
         count=0
         for img, im0s in dataset:
-            f_txt = open(path_txt,"w")
             item = {}
             img = torch.from_numpy(img).to(device)
             img = img.float()  # uint8 to fp16/32
