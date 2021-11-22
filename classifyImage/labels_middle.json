@@ -119,6 +119,7 @@
         "hipp/bot_an_dam/bot_an_dam_6",
         "hipp/bot_an_dam/bot_an_dam_6-36",
         "hipp/bot_an_dam/bot_an_dam_kinder",
+        "hipp/bot_an_dam/bot_an_dam_milk___cereal_5-grain_with_plum",
         "hipp/bot_an_dam"
     ],
     "27": [
@@ -171,6 +172,7 @@
         "nestle/nan"
     ],
     "36": [
+        "nestle/nutren/nutren_junior",
         "nestle/nutren_junior/nutren_junior"
     ],
     "37": [
@@ -181,11 +183,7 @@
         "nutifood/famna"
     ],
     "38": [
-        "nutifood/growplus/growplus_o",
-        "nutifood/growplus/growplus_xanh",
-        "nutifood/growplus/growplus_cam",
-        "nutifood/growplus/growplus_trang",
-        "nutifood/grow_plus"
+        "nutifood/growplus/growplus_o"
     ],
     "39": [
         "nutifood/nuti_gold_iq/nuti_gold_iq_2",
@@ -203,13 +201,12 @@
         "nutifood/riso_opti_gold"
     ],
     "41": [
-        "nutricare/care_100/care_100_gold",
         "nutricare/meta_care/metacare_3",
         "nutricare/meta_care/metacare_5",
         "nutricare/meta_care/metacare_1",
         "nutricare/meta_care/meta_care_4",
         "nutricare/meta_care/metacare_2",
-        "nutricare/meta_care_or_care_100"
+        "nutricare/meta_care"
     ],
     "42": [
         "nutricare/smarta/smarta_iq",
@@ -332,12 +329,12 @@
     "68": [
         "meiji/ezcube/ezcube_infant_formula",
         "meiji/meiji_noi_dia/meiji_noi_ia_hohoemi",
-        "meiji/meiji_0_1"
+        "meiji/meiji_0_1/0-1"
     ],
     "69": [
         "meiji/ezcube/ezcube_growing_up_formula",
         "meiji/meiji_noi_dia/meiji_noi_dia_dang_thanh_so_3,9",
-        "meiji/meiji_1_3"
+        "meiji/meiji_1_3/1-3"
     ],
     "70": [
         "meiji/meiji_noi_dia/meiji_noi_ia_dang_thanh",
@@ -346,5 +343,17 @@
     "71": [
         "meiji/meiji_noi_dia/meiji_noi_dia_xanh",
         "meiji/meiji_1_3/1-3"
+    ],
+    "72": [
+        "nutricare/care_100/care_100_gold"
+    ],
+    "73": [
+        "nutifood/growplus/growplus_xanh"
+    ],
+    "74": [
+        "nutifood/growplus/growplus_cam"
+    ],
+    "75": [
+        "nutifood/growplus/growplus_trang"
     ]
 }
