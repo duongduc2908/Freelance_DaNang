@@ -6,6 +6,7 @@ Usage:
     $ python path/to/detect.py --source path/to/img.jpg --weights yolov5s.pt --img 640
 """
 from PIL import ImageFont, ImageDraw, Image
+from tqdm import tqdm
 import argparse
 import sys
 import time
@@ -14,6 +15,7 @@ import os
 import cv2
 import torch
 import torch.backends.cudnn as cudnn
+import numpy as np
 import glob
 FILE = Path(__file__).absolute()
 sys.path.append(FILE.parents[0].as_posix())  # add yolov5/ to path
@@ -69,10 +71,12 @@ def run(images):
         device).type_as(next(model_object_detect.parameters())))  # run once
 
     count=0
-    for img, im0s in dataset:
+    for img, im0s in tqdm(dataset):
         os.makedirs("res",exist_ok=True)
         count+=1
         path_img = "res/test_{0}.jpg".format(count)
+        path_txt = "res/test_{0}.txt".format(count)
+        f_txt = open(path_txt,"w")
         item = {}
         img = torch.from_numpy(img).to(device)
         img = img.float()  # uint8 to fp16/32
@@ -85,14 +89,14 @@ def run(images):
         preds = model_object_detect(img, augment=False, visualize=False)[0]
 
         # NMS
-        preds = non_max_suppression(preds, 0.447, iou_thres=0.45, classes=None, agnostic=True, max_det=1000)
+        preds = non_max_suppression(preds, conf_thres=0.447, iou_thres=0.45, classes=None, agnostic=True, max_det=1000)
 
         # Process predictions binh sua
         for i, pred in enumerate(preds):  # detections per image
             s, im0 = '', im0s.copy()
             gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]
             imc = im0.copy()
-            imc_1 = im0.copy()
+            imc1 = im0.copy()
             item['height_width'] = [im0.shape[0],im0.shape[1]]
             if len(pred):
                 pred[:, :4] = scale_coords(
@@ -106,6 +110,7 @@ def run(images):
                     count_sua =0
                     xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
                     if int(cls) in [2,3,4]:
+                        c = int(cls)
                         if int(cls) == 2:
                             item['binh_bu'].append(xywh)
                             im0 = plot_one_box(xyxy, im0, label='binh_bu', color=colors(c, True), line_width=3)
@@ -133,9 +138,13 @@ def run(images):
                             10  # box wh * gain + pad
                         xyxy_crop = xywh2xyxy(b).long()
                         clip_coords(xyxy_crop, imc.shape)
-                        crop = imc_1[int(xyxy_crop[0, 1]):int(xyxy_crop[0, 3]), int(
+                        crop = imc1[int(xyxy_crop[0, 1]):int(xyxy_crop[0, 3]), int(
                             xyxy_crop[0, 0]):int(xyxy_crop[0, 2]), ::(1 if BGR else -1)].copy()
                         
+                        # path_img_crop = "res/test_{0}_{1}.png".format(count,count_sua)
+                        # cv2.imwrite(path_img_crop,crop)
+                        if opt.debug:
+                            cv2.imshow('crop',crop)
                         ignord = np.zeros_like(crop)
                         imc[int(xyxy_crop[0, 1]):int(xyxy_crop[0, 3]), int(xyxy_crop[0, 0]):int(xyxy_crop[0, 2]), ::(1 if BGR else -1)] = ignord
                         
@@ -149,15 +158,18 @@ def run(images):
 
                             result_text_spotting = textClassifyInfer2.spotting_text(
                                 pan_detect, craft_detect, mmocr_recog, crop)
-                            # print(result_text_spotting)
+                            
                             result = textClassifyInfer2.predict(result_text_spotting.copy(
                             ), classifyModel_level1, classifyModel_level3=None, branch=True)
 
                             branch_0 = result[-1][0][0].replace(" ", "_")
+                            
                             for i in result_text_spotting:
                                 text = i['text'].lower().replace(' ', '_')
                                 text_list.append(text)
                             test_keyword = False
+                            if opt.debug:
+                                print("TEXT: ",text_list)
                             for text_ in text_list:
                                 if text_ in keywords:
                                     test_keyword = True
@@ -180,16 +192,23 @@ def run(images):
                                 else:
                                     output_final_branch = 'Unknow'
                             output_final_branch = output_final_branch.replace(" ", "_")
+                            
+                            # os.makedirs("res/"+str(output_final_branch),exist_ok=True)
+                            # path_new = "res/"+str(output_final_branch)+"/test_{0}_{1}.png".format(count,count_sua)
+                            # cv2.imwrite(path_new,crop)
+
                             label = output_final_branch
                             check_list = False
                             output_merge, _ = objectClasssifyInfer.predict_merge_model(
                                 model_step, crop)
-                            if len(dict_middle[str(output_merge)]) > 1:
+                            if len(dict_middle[str(output_merge[0])]) > 1:
                                 check_list = True
                             name_merge = dict_middle[str(
-                                output_merge)][-1]
+                                output_merge[0])][-1]
                             brand_merge = name_merge.split("/")[0]
-
+                            if opt.debug:
+                                print("RES_BRANCH: ",output_final_branch)
+                                print("RES_CHINH: ",name_merge)
                             temp_step = None
                             if output_final_branch in ["f99foods", "heinz", "bubs_australia", "megmilksnowbrand", "meiji"]:
                                 pass
@@ -202,8 +221,10 @@ def run(images):
                                         " ", "_")
                                     brand_text = meger_label_branch(
                                         labels_end, 2, temp_step)
+                                    if opt.debug:
+                                        print("RES_THANH: ",brand_text)
                             esem = Ensemble(
-                                output_final_branch, output_merge, temp_step, dict_middle, dict_step, text_list)
+                                output_final_branch, output_merge[0], temp_step, dict_middle, dict_step, text_list)
                             label = esem.run()
                             if width_crop / height_crop < 0.495: #(4/7):
                                 if "yoko" in label.split("/"):
@@ -212,9 +233,19 @@ def run(images):
                                     label = output_final_branch
                                     if label == "f99foods":
                                         label = 'f99//'
-                                
+                            # print("RES_CHINH: ",name_merge)
+                            f_txt.writelines("=============================\n")
+                            f_txt.writelines("TEXT SAN PHAM : {0}\n".format(text_list))
+                            f_txt.writelines("NHAN : {0}\n".format(label))
+                            
                         else:
                             label = "size nho ({0} x {1})".format(width_crop,height_crop)
+
+                        if opt.debug:
+                            print("RES_END: ",label)
+                            print("===============")
+                            if cv2.waitKey() & 0xFF == ord('q'):
+                                break
                         c = int(cls)
                         im0 = plot_one_box(xyxy, im0, label=label, color=colors(c, True), line_width=3)
                         # Output label
@@ -223,7 +254,8 @@ def run(images):
                             'label':label,
                             'text':text_list
                         })
-                
+                        
+
                 # Text banner
                 result_text = textSpottingInfer.predict(
                     imc, craft_detect, model_recognition)
@@ -244,16 +276,23 @@ def run(images):
                         'label':None,
                         'text':None
                     }
+            f_txt.writelines("TEXT BANNER : {0}".format(list_text))
             cv2.imwrite(path_img,im0)
             results_end.append(item)
+            # file_txt = path_img[:-4]+".txt"
+            # with open(file_txt,"w") as f_end:
+            #     f_end.writelines(str(i) +"\n" for i in results_end)
     return results_end
 
 
 if __name__ =='__main__':
     arg = argparse.ArgumentParser()
     arg.add_argument('--dir', type=str, default='', help='specific what task you want to excute')
+    arg.add_argument('--debug', type=bool, default=False, help='specific what task you want to excute')
     opt = arg.parse_args()
     lists_image=[]
-    for path in glob.glob(opt.dir + "/*"):
+    print("LOADING DATA....")
+    for path in tqdm(glob.glob(opt.dir + "/*")):
         lists_image.append(cv2.imread(path))
+    print("PREDICT....")
     run(lists_image)
