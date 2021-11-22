@@ -254,9 +254,14 @@ class Ensemble():
                         label = 'mead_johnson/enfamil/enfamil_a+_gentle_care_followup_formula'
                     if self.result_thanh == 'enfa_grow_a+_gentle_care':
                         label = 'mead_johnson/enfa/enfa_grow_a+_gentle_care'
-        if 'nan_optipro' in [i.strip() for i in label.split("/")]:
+        if 'nan_optipro' in [i.strip() for i in label.split("/")] or 'nan' in [i.strip() for i in label.split("/")]:
             if 'optipro' not in [t.lower() for t in self.text_list]:
-                label=label.replace('nan_optipro','nan')   
+                label=label.replace('nan_optipro','nan')
+        if 'smarta' in [i.strip() for i in label.split("/")]:
+            if 'iq' in [t.lower() for t in self.text_list]:
+                label=label.replace('smarta','smarta_iq')
+            if 'grow' in [t.lower() for t in self.text_list]:
+                label=label.replace('smarta','smarta_grow')
         if 'dielac_grow_plus_blue' in [i.strip() for i in label.split("/")] or 'dielac_grow_plus_red' in [i.strip() for i in label.split("/")]:
             if 'plus' not in self.text_list:
                   label=label.replace('dielac_grow_plus_blue','dielac_grow_blue').replace('dielac_grow_plus_red','dielac_grow_red')
@@ -286,6 +291,37 @@ class Ensemble():
                 label = 'humana/humana/'
         if self.branch=='f99foods':
             label = 'f99/golilac_grow'
+        if self.branch=='meiji':
+            if "meiji_0_1" in label.split("/"):
+                label = "meiji/meiji_0_1/0_1"
+            if "meiji_1_3" in label.split("/"):
+                label = "meiji/meiji_1_3/1_3"
+            if "formula" in self.text_list or "growing" in self.text_list or "grow" in self.text_list or "ez" in self.text_list or "ezcube" in self.text_list or "cube" in self.text_list:
+                label=label.replace("meiji_0_1","meiji_0_1_nhap_khau").replace("meiji_1_3","meiji_1_3_nhap_khau")
+            else:
+                label=label.replace("meiji_0_1","meiji_0_1_noi_dia").replace("meiji_1_3","meiji_1_3_noi_dia")
+        if self.branch=="friesland_campina_dutch_lady":
+            if "khám" in self.text_list or "phá" in self.text_list:
+                if "gold" in self.text_list:
+                    label = 'dutch_lady/dutch_baby/kham_pha_gold'
+                else:
+                    label = 'dutch_lady/dutch_baby/kham_pha'
+            if "tò" in self.text_list or "mò" in self.text_list:
+                if "gold" in self.text_list:
+                    label = 'dutch_lady/dutch_baby/to_mo_gold'
+                else:
+                    label = 'dutch_lady/dutch_baby/to_mo'
+            if "lớn" in self.text_list or "mau" in self.text_list:
+                if "gold" in self.text_list:
+                    label = 'dutch_lady/dutch_baby/mau_lon_gold'
+                else:
+                    label = 'dutch_lady/dutch_baby/mau_lon'
+            if "đi" in self.text_list or "tập" in self.text_list:
+                if "gold" in self.text_list:
+                    label = 'dutch_lady/dutch_baby/tap_di_gold'
+                else:
+                    label = 'dutch_lady/dutch_baby/tap_di'
+
         label = label.replace('enfamil_grow_A+', 'enfamil_enfa_grow').replace('danone','danone_nutricia')\
         .replace('megmilksnowbrand','megmilksnowbrand/guun_up_mbp')\
         .replace('/friso/1','/frisolac/1').replace('/friso/2','/frisolac/2').replace('/friso/3','/frisolac/3')\
