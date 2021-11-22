@@ -1,11 +1,13 @@
 import tensorflow as tf
-import tensorflow as tf
+import torch
 import numpy as np
 import cv2
 import json
 import sys
 
 sys.path.append('classifyImage')
+from source.models.mobilenetv2 import MobileNetV2
+
 
 with open("classifyImage/labels_step.json", "r") as f:
     dict_step = json.load(f)
@@ -26,18 +28,24 @@ if gpus:
 
 def load_model(
         weight_path_1="classifyImage/weights/model_final.h5",
-        weight_path_2="classifyImage/weights/model_step.h5",
+        weight_path_2="classifyImage/weights/model_step.pt",
         labels_txt_fn='classifyImage/labels.txt',
-        labels_branchs_dict_fn='classifyImage/labels_branchs_dict.json',
+        labels_branchs_dict_fn='classifyImage/labels_branchs_dict.json',device='cuda:0'
 ):
     with open(labels_txt_fn, 'r') as f:
         labels = f.readlines()
     labels_end = [x.strip() for x in labels]
     with open(labels_branchs_dict_fn, 'r') as f:
         labels_branch = json.load(f)
+
+    model_step = MobileNetV2(76)
+    model_step.load_state_dict(torch.load(weight_path_2)['state_dict'])
+    model_step = model_step.to(device)
+    model_step.eval()
+
     return (
         tf.keras.models.load_model(weight_path_1, compile=False),
-        tf.keras.models.load_model(weight_path_2, compile=False),
+        model_step,
         labels_end,
         labels_branch,
         dict_middle, dict_step
@@ -100,8 +108,11 @@ def predict_merge_model(model, img):
     else:
         delta = width - height
         img_ = np.pad(img, [[delta // 2, delta // 2], [0, 0], [0, 0]], mode='constant', constant_values=255)
-    img_ = cv2.resize(img_, (96, 96))
+    img_ = cv2.resize(img_, (224, 224))
+    img_ = np.transpose(img_,[2,0,1])
     img_ = np.expand_dims(img_, axis=0)
     img_ = img_.astype('float') / 255.
-    output = model.predict(img_)
-    return np.argmax(output), np.max(output)
+    img_ = torch.Tensor(img_).to('cuda:0')
+    output = model.predict(img_).detach().cpu().numpy()
+    # return output
+    return np.argmax(output,axis=-1), np.max(output,axis=-1)
