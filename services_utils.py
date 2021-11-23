@@ -195,14 +195,14 @@ class Infer:
                 imc1 = im0.copy()
                 item['height_width'] = [im0.shape[0],im0.shape[1]]
                 if len(pred):
-                    pred[:, :4] = scale_coords(
-                        img.shape[2:], pred[:, :4], im0.shape).round()
+                    pred[:, :4] = scale_coords(img.shape[2:], pred[:, :4], im0.shape).round()
+                    item['binh_bu'] = []
+                    item['num_vu'] = []
+                    item['tre_em'] = []
+                    item['sua'] = []
                     for *xyxy, conf, cls in reversed(pred):
                         # Write results
-                        item['binh_bu'] = []
-                        item['num_vu'] = []
-                        item['tre_em'] = []
-                        item['sua'] = []
+                        
                         xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
                         if int(cls) in [2,3,4]:
                             c = int(cls)
@@ -319,7 +319,6 @@ class Infer:
                                 'text':text_list
                             })
 
-
                     # Text banner
                     result_text = textSpottingInfer.predict(
                         imc, craft_detect, model_recognition)
@@ -341,4 +340,4 @@ class Infer:
                             'text':None
                         }
                 results_end.append(item)
-            return results_end
+        return results_end
