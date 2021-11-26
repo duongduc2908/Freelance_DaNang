@@ -213,9 +213,9 @@ class Infer:
                             if int(cls) == 4:
                                 item['tre_em'].append(xywh)
                         else:
-                            item['binh_bu'] = None
-                            item['num_vu'] = None
-                            item['tre_em'] = None
+                            item['binh_bu'] = []
+                            item['num_vu'] = []
+                            item['tre_em'] = []
 
                         if int(cls) in [0,1]:
                             text_list = [] 
