@@ -3,20 +3,18 @@ pip install mmcv-full -f https://download.openmmlab.com/mmcv/dist/cu101/torch1.7
 
 cd classifyText/newpan
 bash compile.sh
-gdown --id 1dXMKs1VAltre6RCtDHYft-2q8oCtC_Yh -O checkpoint/pan.pth.tar
 cd ../../
 
-# download recog model
-gdown --id 1LVyPRbLm_x4qtFHg3CjEfE18763UQCXl -O textSpotting/textRecognition/CRNN_finetune_v1.pth
-
-if ! [ -f "milk_classification/checkpoints.zip" ]
+if ! [ -f "checkpoints.zip" ]
 then
-    gdown --id 1-U38UAigrcEgzKEZZgjtF-kHnbZfEYbv
+    gdown --id 1SjL0xj2rQRSEL37EIDtkvgVc4xfMTgO1
     unzip checkpoints.zip
     rm -f checkpoints.zip
 fi
 pip install pyspellchecker==0.6.2
-pip install ngram==3.3.2
+pip install ngram
+pip install scikit-image
+pip install lmdb
 pip install -U scikit-learn
 pip install tensorflow==2.4.1
 pip install pandas

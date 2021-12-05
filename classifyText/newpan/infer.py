@@ -17,7 +17,7 @@ import cv2
 # from models import build_model
 from .models import PAN
 from .models.utils import fuse_module
-from .utils import ResultFormat, AverageMeter, Corrector
+# from .utils import ResultFormat, AverageMeter, Corrector
 
 
 def test(test_loader, model, cfg):

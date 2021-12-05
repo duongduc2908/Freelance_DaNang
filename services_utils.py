@@ -22,23 +22,23 @@ import numpy as np
 
 from utils.general import xywh2xyxy, clip_coords
 from textSpotting import textSpottingInfer
-from classifyText import textClassifyInfer
+from classifyText import textClassifyInfer2
 from classifyImage import objectClasssifyInfer
 
 model_path_recognition = 'textSpotting/textRecognition/best_accuracy.pth'
 craft_path = 'textSpotting/CRAFTpytorch/craft_mlt_25k.pth'
 
-mmocr_config_dir = 'classifyText/mmocr1/configs/'
-pannet_model_path = 'classifyText/pan/pretrain/pannet_wordlevel.pth'
+recog_model_dir = 'classifyText/mmocr1/configs/'
+pannet_model_path = 'classifyText/newpan/checkpoint/pan.pth.tar'
 brand_text_model_path = 'classifyText/textClassify/checkpoints/product/product_classifier_level1.pkl'
 step_model_dir_path = "classifyText/textClassify/checkpoints/product/brands/"
 
 brand_image_classifier_model_path = "classifyImage/weights/model_final.h5"
-step_image_classifier_model_path = "classifyImage/weights/model_step.h5"
+step_image_classifier_model_path = "classifyImage/weights/model_step.pt"
 labels_txt_fn = 'classifyImage/labels.txt'
 labels_branchs_dict_fn = 'classifyImage/labels_branchs_dict.json'
 
-yolo_model_paths = ['models/weights/binh_new_best.pt', 'models/weights/sua_new_best_2.pt']
+yolo_model_paths = ['models/weights/best.pt']
 
 keywords_fn = 'keywords.txt'
 correct_corpus_fn = 'corpus.txt'
@@ -58,17 +58,9 @@ def load_model_yolo(
         weights,
         device,
 ):
-    # Load model
-    w = weights[0] if isinstance(weights, list) else weights
-    classify, suffix = False, Path(w).suffix.lower()
-    pt, onnx, tflite, pb, graph_def = (suffix == x for x in ['.pt', '.onnx', '.tflite', '.pb', ''])  # backend
-    stride, names = 64, [f'class{i}' for i in range(1000)]  # assign defaults
-
-    model_binh_sua = attempt_load(
+    model_object_detect = attempt_load(
         weights[0], map_location=device)  # load FP32 model
-    model_sua = attempt_load(
-        weights[1], map_location=device)  # load FP32 model
-    return model_binh_sua.eval(), model_sua.eval()
+    return model_object_detect.eval()
 
 
 def load_model(device):
@@ -76,8 +68,8 @@ def load_model(device):
         model_path_recognition=model_path_recognition,
         craft_path=craft_path,
     )
-    mmocr_recog, pan_detect, classifyModel_level1, dict_model = textClassifyInfer.load_model(
-        mmocr_config_dir=mmocr_config_dir,
+    mmocr_recog, pan_detect, classifyModel_level1, dict_model = textClassifyInfer2.load_model(
+        recog_model_dir=recog_model_dir,
         pannet_model_path=pannet_model_path,
         brand_text_model_path=brand_text_model_path,
         step_model_dir_path=step_model_dir_path,
@@ -96,7 +88,7 @@ def load_model(device):
         labels_branchs_dict_fn=labels_branchs_dict_fn,
     )
 
-    model_binh_sua, model_sua = load_model_yolo(
+    model_object_detect= load_model_yolo(
         weights=yolo_model_paths,
         device=device,
     )
@@ -112,7 +104,7 @@ def load_model(device):
             dict_middle,
             dict_step,
         ),
-        (model_binh_sua, model_sua,),
+        model_object_detect,
     )
 
 
@@ -134,7 +126,7 @@ class Infer:
             dict_middle,
             dict_step,
 
-            model_binh_sua, model_sua,
+            model_object_detect,
             keywords, spell,
             device,
     ):
@@ -164,27 +156,22 @@ class Infer:
             self.dict_step,
         )
 
-        model_binh_sua, model_sua = (self.model_binh_sua, self.model_sua)
+        model_object_detect = (self.model_object_detect)
         device = self.device
         keywords = self.keywords
         spell = self.spell
 
-        # return results_end
         results_end = []
-        stride_binh = int(model_binh_sua.stride.max())  # model stride
-        names_binh = model_binh_sua.module.names if hasattr(model_binh_sua, 'module') else model_binh_sua.names  # get class names
-        names_sua = model_sua.module.names if hasattr(model_sua, 'module') else model_sua.names  # get class names
-        imgsz_binh = check_img_size(imgsz=640, s=stride_binh)  # check image size
+        stride_object_detect = int(model_object_detect.stride.max())  # model stride
+        imgsz_object_detect = check_img_size(imgsz=640, s=stride_object_detect)  # check image size
 
         # Load datasets
-        dataset = LoadImages(images, img_size=imgsz_binh, stride=stride_binh)
+        dataset = LoadImages(images, img_size=imgsz_object_detect, stride=stride_object_detect)
         # Run inference
-        model_binh_sua(torch.zeros(1, 3, imgsz_binh, imgsz_binh).to(
-            device).type_as(next(model_binh_sua.parameters())))  # run once
-        model_sua(torch.zeros(1, 3, imgsz_binh, imgsz_binh).to(
-            device).type_as(next(model_sua.parameters())))  # run once
+        model_object_detect(torch.zeros(1, 3, imgsz_object_detect, imgsz_object_detect).to(
+            device).type_as(next(model_object_detect.parameters())))  # run once
 
-        t0 = time.time()
+        count=0
         for img, im0s in dataset:
             item = {}
             img = torch.from_numpy(img).to(device)
@@ -195,148 +182,143 @@ class Infer:
 
             # Inference
             t1 = time_sync()
-            pred_binh = model_binh_sua(img, augment=False, visualize=False)[0]
-            pred_sua = model_sua(img, augment=False, visualize=False)[0]
+            preds = model_object_detect(img, augment=False, visualize=False)[0]
 
             # NMS
-            pred_binh = non_max_suppression(pred_binh, 0.4, iou_thres=0.45, classes=None, agnostic=True, max_det=1000)
-            pred_sua = non_max_suppression(pred_sua, conf_thres=0.3, iou_thres=0.45, classes=None, agnostic=True, max_det=1000)
-            t2 = time_sync()
+            preds = non_max_suppression(preds, conf_thres=0.447, iou_thres=0.45, classes=None, agnostic=True, max_det=1000)
 
             # Process predictions binh sua
-            for i, (det_binh, det_sua) in enumerate(zip(pred_binh, pred_sua)):  # detections per image
+            for i, pred in enumerate(preds):  # detections per image
                 s, im0 = '', im0s.copy()
                 gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]
                 imc = im0.copy()
+                imc1 = im0.copy()
                 item['height_width'] = [im0.shape[0],im0.shape[1]]
-                if len(det_binh):
-                    det_binh[:, :4] = scale_coords(
-                        img.shape[2:], det_binh[:, :4], im0.shape).round()
-
-                    # Write results
+                if len(pred):
+                    pred[:, :4] = scale_coords(img.shape[2:], pred[:, :4], im0.shape).round()
                     item['binh_bu'] = []
                     item['num_vu'] = []
                     item['tre_em'] = []
-                    for *xyxy, conf, cls in reversed(det_binh):
-                        xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
-                        # c = int(cls)
-                        if int(cls) == 0:
-                            item['binh_bu'].append(xywh)
-                        if int(cls) == 1:
-                            item['num_vu'].append(xywh)
-                        if int(cls) == 2:
-                            item['tre_em'].append(xywh)
-                        
-                else:
-                    item['binh_bu'] = None
-                    item['num_vu'] = None
-                    item['tre_em'] = None
-                if len(det_sua):
-                    # Rescale boxes from img_size to im0 size
-                    det_sua[:, :4] = scale_coords(img.shape[2:], det_sua[:, :4], im0.shape).round()
-
-                    # Write results
                     item['sua'] = []
-                    for *xyxy, conf, cls in reversed(det_sua):
-                        text_list = [] 
-                        # Output hop sua
-                        xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
-                        # Xu ly box 
-                        BGR = True
-                        xyxy_test = torch.tensor(xyxy).view(-1, 4)
-                        b = xyxy2xywh(xyxy_test)  # boxes
-                        b[:, 2:] = b[:, 2:] * 1.02 + \
-                            10  # box wh * gain + pad
-                        xyxy_crop = xywh2xyxy(b).long()
-                        clip_coords(xyxy_crop, imc.shape)
-                        crop = imc[int(xyxy_crop[0, 1]):int(xyxy_crop[0, 3]), int(
-                            xyxy_crop[0, 0]):int(xyxy_crop[0, 2]), ::(1 if BGR else -1)]
+                    for *xyxy, conf, cls in reversed(pred):
+                        # Write results
                         
-                        # End crop
-                        # To classification
-                        height_crop,width_crop,_ =  crop.shape
-                        name_merge=''
-                        temp_step = ''
-                        if height_crop > 65 and  width_crop > 50:
-                            output_brand, sc1 = objectClasssifyInfer.predict(
-                                chinh_model, crop, return_features=False)
-                            result_text_spotting = textClassifyInfer.spotting_text(
-                                pan_detect, craft_detect, mmocr_recog, crop)
+                        xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
+                        if int(cls) in [2,3,4]:
+                            c = int(cls)
+                            if int(cls) == 2:
+                                item['binh_bu'].append(xywh)
+                            if int(cls) == 3:
+                                item['num_vu'].append(xywh)
+                            if int(cls) == 4:
+                                item['tre_em'].append(xywh)
+                        else:
+                            item['binh_bu'] = []
+                            item['num_vu'] = []
+                            item['tre_em'] = []
 
-                            result = textClassifyInfer.predict(result_text_spotting.copy(
-                            ), classifyModel_level1, classifyModel_level3=None, branch=True)
+                        if int(cls) in [0,1]:
+                            text_list = [] 
+                            # Output hop sua
+                            xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
+                            # Xu ly box 
+                            BGR = True
+                            xyxy_test = torch.tensor(xyxy).view(-1, 4)
+                            b = xyxy2xywh(xyxy_test)  # boxes
+                            b[:, 2:] = b[:, 2:] * 1.02 + \
+                                10  # box wh * gain + pad
+                            xyxy_crop = xywh2xyxy(b).long()
+                            clip_coords(xyxy_crop, imc.shape)
+                            crop = imc1[int(xyxy_crop[0, 1]):int(xyxy_crop[0, 3]), int(
+                                xyxy_crop[0, 0]):int(xyxy_crop[0, 2]), ::(1 if BGR else -1)].copy()
                             
-                            branch_0 = result[-1][0][0].replace(" ", "_")
-                            for i in result[:-1]:
-                                text = i['text'].lower().replace(' ', '_')
-                                text_list.append(text)
-                            test_keyword = False
-                            for text_ in text_list:
-                                if text_ in keywords:
-                                    test_keyword = True
-                                    break
-                            c = (list(labels_branch.keys())
-                                [output_brand].strip())
-                            if test_keyword == True:
-                                output_final_branch = result[-1][0][0]
-                            elif len(text_list) == 0 and sc1 < 0.98:
-                                output_final_branch = 'Unknow'
-                            elif len(text_list) >= 4:
-                                branch_0 = c
-                                if sc1 > 0.95:
-                                    output_final_branch = c
-                                else:
-                                    output_final_branch = 'Unknow'
-                            else:
-                                if sc1 > 0.93:
-                                    output_final_branch = c
-                                else:
-                                    output_final_branch = 'Unknow'
-                            output_final_branch = output_final_branch.replace(" ", "_")
-                            label = output_final_branch
-                            check_list = False
-                            output_merge, _ = objectClasssifyInfer.predict_merge_model(
-                                model_step, crop)
-                            if len(dict_middle[str(output_merge)]) > 1:
-                                check_list = True
-                            name_merge = dict_middle[str(
-                                output_merge)][-1]
-                            brand_merge = name_merge.split("/")[0]
+                            ignord = np.zeros_like(crop)
+                            imc[int(xyxy_crop[0, 1]):int(xyxy_crop[0, 3]), int(xyxy_crop[0, 0]):int(xyxy_crop[0, 2]), ::(1 if BGR else -1)] = ignord
 
-                            temp_step = None
-                            if output_final_branch in ["f99foods", "heinz", "bubs_australia", "megmilksnowbrand", "meiji"]:
-                                pass
-                            else:
-                                if output_final_branch in dict_model.keys():
-                                    classifyModel_level3 = dict_model[output_final_branch]                                          
-                                    result_2 = textClassifyInfer.predict(
-                                        result_text_spotting, classifyModel_level1, classifyModel_level3, step=True, added_text=''.replace(' ', '_'))
-                                    temp_step = result_2[-1][0].replace(
-                                        " ", "_")
-                                    brand_text = meger_label_branch(
-                                        labels_end, 2, temp_step)
-                            esem = Ensemble(
-                                output_final_branch, output_merge, temp_step, dict_middle, dict_step, text_list)
-                            label = esem.run()
-                            if width_crop / height_crop < 0.495: #(4/7):
-                                if "yoko" in label.split("/"):
+                            # To classification
+                            height_crop,width_crop,_ =  crop.shape
+                            name_merge=''
+                            temp_step = ''
+                            if height_crop > 65 and  width_crop > 50:
+                                output_brand, sc1 = objectClasssifyInfer.predict(
+                                    chinh_model, crop.copy(), return_features=False)
+
+                                result_text_spotting = textClassifyInfer2.spotting_text(
+                                    pan_detect, craft_detect, mmocr_recog, crop)
+
+                                result = textClassifyInfer2.predict(result_text_spotting.copy(
+                                ), classifyModel_level1, classifyModel_level3=None, branch=True)
+
+                                branch_0 = result[-1][0][0].replace(" ", "_")
+
+                                for i in result_text_spotting:
+                                    text = i['text'].lower().replace(' ', '_')
+                                    text_list.append(text)
+                                test_keyword = False
+                                for text_ in text_list:
+                                    if text_ in keywords:
+                                        test_keyword = True
+                                        break
+                                c = (list(labels_branch.keys())
+                                    [output_brand].strip())
+                                if test_keyword == True:
+                                    output_final_branch = result[-1][0][0]
+                                elif len(text_list) == 0 and sc1 < 0.98:
+                                    output_final_branch = 'Unknow'
+                                elif len(text_list) >= 4:
+                                    branch_0 = c
+                                    if sc1 > 0.95:
+                                        output_final_branch = c
+                                    else:
+                                        output_final_branch = 'Unknow'
+                                else:
+                                    if sc1 > 0.93:
+                                        output_final_branch = c
+                                    else:
+                                        output_final_branch = 'Unknow'
+                                output_final_branch = output_final_branch.replace(" ", "_")
+
+                                label = output_final_branch
+                                check_list = False
+                                output_merge, _ = objectClasssifyInfer.predict_merge_model(
+                                    model_step, crop)
+                                if len(dict_middle[str(output_merge[0])]) > 1:
+                                    check_list = True
+                                name_merge = dict_middle[str(
+                                    output_merge[0])][-1]
+                                brand_merge = name_merge.split("/")[0]
+                                temp_step = None
+                                if output_final_branch in ["f99foods", "heinz", "bubs_australia", "megmilksnowbrand", "meiji"]:
                                     pass
                                 else:
-                                    label = output_final_branch
-                                    if label == "f99foods":
-                                        label = 'f99//'
-                                
-                        else:
-                            label = "size nho ({0} x {1})".format(width_crop,height_crop)
-                        c = int(cls)
-                        im0 = plot_one_box(xyxy, im0, label=label, color=colors(c, True), line_width=3)
-                        # Output label
-                        item['sua'].append({
-                            'toa_do': xywh,
-                            'label':label,
-                            'text':text_list
-                        })
-                    
+                                    if output_final_branch in dict_model.keys():
+                                        classifyModel_level3 = dict_model[output_final_branch]                                          
+                                        result_2 = textClassifyInfer2.predict(
+                                            result_text_spotting, classifyModel_level1, classifyModel_level3, step=True, added_text=''.replace(' ', '_'))
+                                        temp_step = result_2[-1][0].replace(
+                                            " ", "_")
+                                        brand_text = meger_label_branch(
+                                            labels_end, 2, temp_step)
+                                esem = Ensemble(
+                                    output_final_branch, output_merge[0], temp_step, dict_middle, dict_step, text_list)
+                                label = esem.run()
+                                if width_crop / height_crop < 0.495: #(4/7):
+                                    if "yoko" in label.split("/"):
+                                        pass
+                                    else:
+                                        label = output_final_branch
+                                        if label == "f99foods":
+                                            label = 'f99//'
+                            else:
+                                label = "size nho ({0} x {1})".format(width_crop,height_crop)
+
+                            # Output label
+                            item['sua'].append({
+                                'toa_do': xywh,
+                                'label':label,
+                                'text':text_list
+                            })
+
                     # Text banner
                     result_text = textSpottingInfer.predict(
                         imc, craft_detect, model_recognition)
@@ -350,7 +332,6 @@ class Infer:
                         list_text.append((text))
 
                     item['text_banner']= list_text
-                    # Output text banner
                 else:
                     item['text_banner']=[]
                     item['sua']={

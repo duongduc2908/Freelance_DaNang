@@ -14,7 +14,7 @@ device = select_device('0')
     (craft_detect, model_recognition),
     (mmocr_recog, pan_detect, classifyModel_level1, mapping_checkpoints),
     (chinh_model, model_step, labels_end, labels_branch, dict_middle, dict_step),
-    (model_binh_sua, model_sua,),
+    model_object_detect,
 ) = load_model(
     device=device,
 )
@@ -26,7 +26,7 @@ infer = Infer(
     craft_detect, model_recognition,
     mmocr_recog, pan_detect, classifyModel_level1, mapping_checkpoints,
     chinh_model, model_step, labels_end, labels_branch, dict_middle, dict_step,
-    model_binh_sua, model_sua,
+    model_object_detect,
     keywords, spell,
     device,
 )
